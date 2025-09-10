@@ -76,13 +76,13 @@
 
 .benefits .benefit {
   flex: 1;
-  text-align: center;
+  text-align: left;
 }
 
 .benefits .benefit .icon {
-  display: flex;
-  justify-content: center;
-  margin-bottom: 12px;
+  display: inline-block;
+  margin-right: 8px;
+  vertical-align: middle;
 }
 
 .benefits .benefit .icon svg {
@@ -94,6 +94,7 @@
 .benefits .benefit p {
   margin: 8px 0;
   line-height: 1.6;
+  font-weight: normal;
 }
 
 .benefits .benefit p:nth-child(2) {
@@ -140,4 +141,5 @@
   font-weight: bold;
   max-width: 600px;
   text-align: center;
+
 }
