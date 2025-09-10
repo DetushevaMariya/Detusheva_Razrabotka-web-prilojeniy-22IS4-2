@@ -13,6 +13,7 @@ import PromoCard from './components/PromoCard';
 import FavoritesPage from './components/FavoritesPage';
 import CatalogPage from './components/CatalogPage';
 import CategoryPage from './components/CategoryPage';
+import AboutPage from './components/AboutPage';
 import Footer from './components/Footer';
 import './assets/styles.css';
 
@@ -630,6 +631,7 @@ function App() {
           />
           <Route path="/catalog" element={<CatalogPage />} />
           <Route path="/category/:categoryKey" element={<CategoryPage />} />
+          <Route path="/about" element={<AboutPage />} />
         </Routes>
 
         <Footer />
