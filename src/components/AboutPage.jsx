@@ -62,11 +62,12 @@ const AboutPage = () => {
         </div>
       </div>
 
-      <div className="logo-and-text">
+     <div className="logo-and-text">
         <div className="logo">
-          <svg viewBox="0 0 64 64">
-            <path d="M32 16C27.58 16 24 19.58 24 24C24 28.42 27.58 32 32 32C36.42 32 40 28.42 40 24C40 19.58 36.42 16 32 16ZM32 40C26.48 40 22 44.48 22 50C22 55.52 26.48 60 32 60C37.52 60 42 55.52 42 50C42 44.48 37.52 40 32 40Z" />
-          </svg>
+          <img
+            src={require('../assets/photo/aboutCompanyLogo.png')}
+            alt="Логотип"
+          />
         </div>
         <div className="message">
           Спасибо за то, что вы с нами. Северяночка, везет всегда!
@@ -75,5 +76,6 @@ const AboutPage = () => {
     </div>
   );
 };
+
 
 export default AboutPage;
