@@ -17,7 +17,7 @@ const Footer = () => {
         <nav className="footer-links">
           <Link to="/about">О компании</Link>
           <a href="#">Контакты</a>
-          <a href="#">Вакансии</a>
+          <Link to="/vacancies">Вакансии</Link>
           <Link to="/articles">Статьи</Link>
           <a href="#">Политика обработки персональных данных</a>
         </nav>
@@ -56,3 +56,4 @@ const Footer = () => {
 
 
 export default Footer;
+
