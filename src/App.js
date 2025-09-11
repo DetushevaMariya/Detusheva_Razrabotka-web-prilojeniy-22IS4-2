@@ -14,6 +14,7 @@ import FavoritesPage from './components/FavoritesPage';
 import CatalogPage from './components/CatalogPage';
 import CategoryPage from './components/CategoryPage';
 import AboutPage from './components/AboutPage';
+import VacanciesPage from './components/VacanciesPage';
 import Footer from './components/Footer';
 import './assets/styles.css';
 
@@ -632,6 +633,7 @@ function App() {
           <Route path="/catalog" element={<CatalogPage />} />
           <Route path="/category/:categoryKey" element={<CategoryPage />} />
           <Route path="/about" element={<AboutPage />} />
+          <Route path="/vacancies" element={<VacanciesPage />} />
         </Routes>
 
         <Footer />
