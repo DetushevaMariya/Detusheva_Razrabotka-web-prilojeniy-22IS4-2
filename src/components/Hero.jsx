@@ -1,6 +1,6 @@
 import React from 'react';
 import '../assets/Hero.css'
-import heroBg from '../assets/photo/hero-bg.png'; 
+import heroBg from '../assets/photo/hero-bg1.png'; 
 
 const Hero = () => {
   return (
@@ -9,5 +9,6 @@ const Hero = () => {
     </section>
   );
 };
+
 
 export default Hero;
