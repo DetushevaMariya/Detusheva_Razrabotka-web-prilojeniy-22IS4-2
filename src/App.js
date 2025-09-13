@@ -15,6 +15,7 @@ import CatalogPage from './components/CatalogPage';
 import CategoryPage from './components/CategoryPage';
 import AboutPage from './components/AboutPage';
 import VacanciesPage from './components/VacanciesPage';
+import ContactsPage from './components/ContactsPage';
 import Footer from './components/Footer';
 import './assets/styles.css';
 
@@ -634,6 +635,7 @@ function App() {
           <Route path="/category/:categoryKey" element={<CategoryPage />} />
           <Route path="/about" element={<AboutPage />} />
           <Route path="/vacancies" element={<VacanciesPage />} />
+          <Route path="/contacts" element={<ContactsPage />} />
         </Routes>
 
         <Footer />
