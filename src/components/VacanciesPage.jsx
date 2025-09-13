@@ -33,6 +33,7 @@ const VacanciesPage = () => {
             <div className="text">
               Текст про условия текст про условия текст про условия текст про условия текст про условия
             </div>
+            <div className="subtitle">Звоните</div>
             <div className="phone">
               <img
                 src={require('../assets/photo/phone.png')}
@@ -46,5 +47,6 @@ const VacanciesPage = () => {
     </div>
   );
 };
+
 
 export default VacanciesPage;
