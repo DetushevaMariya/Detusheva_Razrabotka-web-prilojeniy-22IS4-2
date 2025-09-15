@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import '../assets/styles.css';
 import '../assets/Header.css';
@@ -17,6 +17,30 @@ const Header = ({
   const [user, setUser] = useState(null);
   const [cartCount, setCartCount] = useState(0);
   const [showSuggestions, setShowSuggestions] = useState(false);
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+
+  useEffect(() => {
+    const savedUser = localStorage.getItem('currentUser');
+    if (savedUser) {
+      setUser(JSON.parse(savedUser));
+    }
+    const savedCart = localStorage.getItem('cart');
+    if (savedCart) {
+      const cart = JSON.parse(savedCart);
+      const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
+      setCartCount(totalItems);
+    }
+  }, []);
+
+  //Функция для обновления счётчика
+  const updateCartCount = () => {
+    const savedCart = localStorage.getItem('cart');
+    const cart = savedCart ? JSON.parse(savedCart) : [];
+    const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
+    setCartCount(totalItems);
+  };
+
+  window.updateCartCount = updateCartCount;
 
   const handleSearchClick = () => {
     if (searchQuery.trim()) {
@@ -32,12 +56,20 @@ const Header = ({
 
   const handleLogin = (userData) => {
     setUser(userData);
+    localStorage.setItem('currentUser', JSON.stringify(userData));
     setIsAuthOpen(false); 
   };
 
   const handleRegister = (userData) => {
     setUser(userData);
-    setIsAuthOpen(false); 
+    localStorage.setItem('currentUser', JSON.stringify(userData));
+    setIsAuthOpen(false);
+  };
+
+  const handleLogout = () => {
+    setUser(null);
+    localStorage.removeItem('currentUser');
+    setIsDropdownOpen(false);
   };
 
   return (
@@ -113,11 +145,11 @@ const Header = ({
             <BoxIcon />
             <span>Заказы</span>
           </a>
-          <a href="#" className="nav-link">
+          <Link to="/cart" className="nav-link">
             <CartIcon />
             <span>Корзина</span>
             {cartCount > 0 && <span className="cart-count">{cartCount}</span>}
-          </a>
+          </Link>
         </nav>
 
         <div className="user-menu">
@@ -125,6 +157,25 @@ const Header = ({
             <div className="user-profile">
               <img src={user.photo || userPhoto} alt="User" />
               <span>{user.name}</span>
+              <svg
+                className={`dropdown-icon ${isDropdownOpen ? 'open' : ''}`}
+                viewBox="0 0 16 16"
+                fill="currentColor"
+                onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+              >
+                <path d="M7.999 11.5l-3.5-3.5 1.414-1.414L7.999 9.672l3.5-3.5 1.414 1.414L9.414 11.5H7.999z" />
+              </svg>
+
+              {isDropdownOpen && (
+                <div className="dropdown-menu">
+                  <button
+                    className="dropdown-item"
+                    onClick={handleLogout}
+                  >
+                    Выйти
+                  </button>
+                </div>
+              )}
             </div>
           ) : (
             <button 
@@ -148,5 +199,6 @@ const Header = ({
     </div>
   );
 };
+
 
 export default Header;
