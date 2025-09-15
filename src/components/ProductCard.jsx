@@ -21,6 +21,35 @@ const ProductCard = ({
   const handleIncrement = () => setQuantity(prev => prev + 1);
   const handleDecrement = () => setQuantity(prev => prev > 1 ? prev - 1 : 1);
 
+  //Логика добавления в корзину
+  const addToCart = () => {
+  const product = {
+    id: Date.now() + Math.random(),
+    image,
+    title,
+    price: parseFloat(price.replace(',', '.')),
+    discount: null,
+    quantity,
+  };
+
+  const savedCart = localStorage.getItem('cart');
+  let cart = savedCart ? JSON.parse(savedCart) : [];
+
+  const existingIndex = cart.findIndex(p => p.title === product.title);
+  if (existingIndex !== -1) {
+    cart[existingIndex].quantity += product.quantity;
+  } else {
+    cart.push(product);
+  }
+
+  localStorage.setItem('cart', JSON.stringify(cart));
+  setIsAdded(true);
+
+  if (window.updateCartCount) {
+    window.updateCartCount();
+  }
+};
+
   return (
     <div className="product-card">
       <div className="card-image-container">
@@ -72,5 +101,6 @@ const ProductCard = ({
     </div>
   );
 };
+
 
 export default ProductCard;
