@@ -182,6 +182,7 @@ const CartPage = () => {
           <button
             className="checkout-btn"
             disabled={!isMinOrderReached}
+            onClick={() => navigate('/delivery')}
           >
             Оформить заказ
           </button>
@@ -190,5 +191,6 @@ const CartPage = () => {
     </div>
   );
 };
+
 
 export default CartPage;
