@@ -1,5 +1,3 @@
-/* src/components/DeliveryPage.css */
-
 .delivery-container {
   width: 1440px;
   margin: 0 auto;
@@ -74,7 +72,7 @@
   text-align: left;
   white-space: nowrap;
   line-height: 1.2;
-  width: 100%; /* ← Ширина label = ширине input */
+  width: 100%; 
   box-sizing: border-box;
 }
 
@@ -84,8 +82,8 @@
   border: 1px solid #ddd;
   border-radius: 4px;
   font-size: 14px;
-  width: 100%; /* ← Занимает всю ширину */
-  box-sizing: border-box; /* ← Важно для правильного расчёта ширины */
+  width: 100%; 
+  box-sizing: border-box; 
 }
 
 .time-slots {
