@@ -141,10 +141,10 @@ const Header = ({
             <HeartIcon />
             <span>Избранное</span>
           </Link>
-          <a href="#" className="nav-link">
+          <Link to="/orders" className="nav-link">
             <BoxIcon />
             <span>Заказы</span>
-          </a>
+          </Link>
           <Link to="/cart" className="nav-link">
             <CartIcon />
             <span>Корзина</span>
@@ -202,3 +202,4 @@ const Header = ({
 
 
 export default Header;
+
