@@ -18,6 +18,7 @@ import VacanciesPage from './components/VacanciesPage';
 import ContactsPage from './components/ContactsPage';
 import CartPage from './components/CartPage';
 import DeliveryPage from './components/DeliveryPage';
+import OrdersPage from './components/OrdersPage';
 import Footer from './components/Footer';
 import './assets/styles.css';
 
@@ -640,6 +641,7 @@ function App() {
           <Route path="/contacts" element={<ContactsPage />} />
           <Route path="/cart" element={<CartPage />} />
           <Route path="/delivery" element={<DeliveryPage />} />
+          <Route path="/orders" element={<OrdersPage />} />
         </Routes>
 
         <Footer />
