@@ -1,3 +1,4 @@
+// src/components/AuthModal.jsx
 import React, { useState } from 'react';
 import '../assets/AuthModal.css';
 
@@ -5,46 +6,53 @@ const AuthModal = ({ isOpen, onClose, onLogin, onRegister }) => {
   const [isLogin, setIsLogin] = useState(true);
   const [phone, setPhone] = useState('');
   const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
   const [photo, setPhoto] = useState(null);
-
-  //Проверить сущ пользователей
-  const existingUsers = JSON.parse(localStorage.getItem('users')) || [];
-
-  const handleLogin = () => {
-  const user = existingUsers.find(u => u.phone === phone);
-  if (user) {
-    onLogin(user);  
-    onClose();      
-  }
-};
-
-  const handleRegister = () => {
-  if (!phone || !name) return;
-
-  const newUser = { phone, name, photo };
-  const updatedUsers = [...existingUsers, newUser];
-  localStorage.setItem('users', JSON.stringify(updatedUsers));
-  onRegister(newUser);
-  onClose(); 
-};
 
   const handleFileChange = (e) => {
     const file = e.target.files[0];
     if (file) {
       const reader = new FileReader();
-      reader.onload = (event) => {
-        setPhoto(event.target.result);
-      };
+      reader.onload = (event) => setPhoto(event.target.result);
       reader.readAsDataURL(file);
     }
   };
 
+  const handleSubmit = async () => {
+    const userData = { name, email, phone, photo };
+
+    const endpoint = isLogin ? '/api/users/login' : '/api/users/register';
+    const method = 'POST';
+
+    try {
+      const response = await fetch(`http://localhost:5000${endpoint}`, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(userData),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        // Сохраняем токен и пользователя
+        localStorage.setItem('authToken', data.token);
+        localStorage.setItem('currentUser', JSON.stringify(data.user));
+        onLogin?.(data.user); // или onRegister
+        onClose();
+      } else {
+        alert(data.error);
+      }
+    } catch (err) {
+      alert('Ошибка подключения к серверу');
+    }
+  };
+
+  if (!isOpen) return null;
+
   return (
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-        <button className="close-btn" onClick={onClose}>
-          ×
-        </button>
+        <button className="close-btn" onClick={onClose}>×</button>
         <h2>{isLogin ? 'Вход' : 'Регистрация'}</h2>
 
         <div className="form-group">
@@ -53,8 +61,7 @@ const AuthModal = ({ isOpen, onClose, onLogin, onRegister }) => {
             type="tel"
             value={phone}
             onChange={(e) => setPhone(e.target.value)}
-            placeholder="+7"
-            style={{ width: '260px', height: '40px', padding: '8px 10px', border: '1px solid #ddd', borderRadius: '4px', fontSize: '14px' }}
+            placeholder="+7 912 888 77 55"
           />
         </div>
 
@@ -66,48 +73,43 @@ const AuthModal = ({ isOpen, onClose, onLogin, onRegister }) => {
                 type="text"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                placeholder="Ваше имя"
-                style={{ width: '260px', height: '40px', padding: '8px 10px', border: '1px solid #ddd', borderRadius: '4px', fontSize: '14px' }}
+                placeholder="Анна"
+              />
+            </div>
+            <div className="form-group">
+              <label>Email (опционально)</label>
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="anna@example.com"
               />
             </div>
             <div className="form-group">
               <label>Фото</label>
-              <input
-                type="file"
-                accept="image/*"
-                onChange={handleFileChange}
-                style={{ width: '260px', height: '40px', padding: '8px 10px', border: '1px solid #ddd', borderRadius: '4px', fontSize: '14px' }}
-              />
+              <input type="file" accept="image/*" onChange={handleFileChange} />
+              {photo && (
+                <img
+                  src={photo}
+                  alt="Превью"
+                  style={{ width: '60px', height: '60px', borderRadius: '50%', marginTop: '8px' }}
+                />
+              )}
             </div>
           </>
         )}
 
-        <button
-          className="submit-btn"
-          onClick={isLogin ? handleLogin : handleRegister}
-          style={{ width: '260px', height: '40px', padding: '12px', background: '#ff6b35', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', margin: '0 auto' }}
-        >
-          {isLogin ? 'Вход' : 'Регистрация'}
+        <button className="submit-btn" onClick={handleSubmit}>
+          {isLogin ? 'Войти' : 'Зарегистрироваться'}
         </button>
 
-        {isLogin && (
-          <div className="bottom-links">
-            <button
-              className="reg-btn"
-              onClick={() => setIsLogin(false)}
-              style={{ width: 'auto', padding: '4px', background: 'transparent', border: '1px solid #ddd', color: '#333', cursor: 'pointer' }}
-            >
-              Регистрация
-            </button>
-            <button
-              className="forgot-btn"
-              onClick={() => alert('Функция "Забыли пароль?"')}
-              style={{ width: 'auto', padding: '4px', background: 'transparent', border: '1px solid #ddd', color: '#333', cursor: 'pointer' }}
-            >
-              Забыли пароль?
-            </button>
-          </div>
-        )}
+        <p>
+          <button onClick={() => setIsLogin(!isLogin)} className="toggle-mode">
+            {isLogin
+              ? 'Нет аккаунта? Зарегистрироваться'
+              : 'Уже есть аккаунт? Войти'}
+          </button>
+        </p>
       </div>
     </div>
   );
