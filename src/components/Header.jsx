@@ -15,9 +15,29 @@ const Header = ({
 }) => {
   const [isAuthOpen, setIsAuthOpen] = useState(false);
   const [user, setUser] = useState(null);
-  const [cartCount, setCartCount] = useState(0);
+  const [cartCount, setCartCount] = useState(0); 
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+
+  useEffect(() => {
+    const token = localStorage.getItem('authToken');
+    if (token) {
+      fetch('http://localhost:5000/api/users/me', {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+        .then((res) => res.json())
+        .then((userData) => {
+          if (userData.id) {
+            setUser(userData);
+          } else {
+            localStorage.removeItem('authToken');
+            localStorage.removeItem('currentUser');
+          }
+        })
+        .catch(console.error);
+    }
+  }, []);
+
 
   useEffect(() => {
     const savedUser = localStorage.getItem('currentUser');
@@ -57,7 +77,7 @@ const Header = ({
   const handleLogin = (userData) => {
     setUser(userData);
     localStorage.setItem('currentUser', JSON.stringify(userData));
-    setIsAuthOpen(false); 
+    setIsAuthOpen(false);
   };
 
   const handleRegister = (userData) => {
@@ -67,9 +87,14 @@ const Header = ({
   };
 
   const handleLogout = () => {
-    setUser(null);
+    localStorage.removeItem('authToken');
     localStorage.removeItem('currentUser');
+    setUser(null);
     setIsDropdownOpen(false);
+  };
+
+  const handleLoginSuccess = (userData) => {
+    setUser(userData);
   };
 
   return (
@@ -82,7 +107,7 @@ const Header = ({
 
         <button
           className="catalog-button"
-          onClick={() => window.location.href = '/catalog'} 
+          onClick={() => window.location.href = '/catalog'}
           style={{
             display: 'flex',
             alignItems: 'center',
@@ -200,6 +225,4 @@ const Header = ({
   );
 };
 
-
 export default Header;
-
