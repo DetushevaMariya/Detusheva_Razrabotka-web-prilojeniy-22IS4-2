@@ -1,4 +1,3 @@
-// src/components/AuthModal.jsx
 import React, { useState } from 'react';
 import '../assets/AuthModal.css';
 
@@ -18,34 +17,32 @@ const AuthModal = ({ isOpen, onClose, onLogin, onRegister }) => {
     }
   };
 
-  const handleSubmit = async () => {
-    const userData = { name, email, phone, photo };
+  
+const handleSubmit = async () => {
+  const userData = { name, phone, photo };
+  const endpoint = isLogin ? '/api/users/login' : '/api/users/register';
+  
+  try {
+    const response = await fetch(`http://localhost:5000${endpoint}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(userData)
+    });
 
-    const endpoint = isLogin ? '/api/users/login' : '/api/users/register';
-    const method = 'POST';
+    const data = await response.json();
 
-    try {
-      const response = await fetch(`http://localhost:5000${endpoint}`, {
-        method,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(userData),
-      });
-
-      const data = await response.json();
-
-      if (response.ok) {
-        // Сохраняем токен и пользователя
-        localStorage.setItem('authToken', data.token);
-        localStorage.setItem('currentUser', JSON.stringify(data.user));
-        onLogin?.(data.user); // или onRegister
-        onClose();
-      } else {
-        alert(data.error);
-      }
-    } catch (err) {
-      alert('Ошибка подключения к серверу');
+    if (response.ok) {
+  localStorage.setItem('authToken', data.token);
+  localStorage.setItem('currentUser', JSON.stringify(data.user));
+  onLogin?.(data.user);
+  onClose();
+} else {
+      alert(data.error || 'Ошибка входа');
     }
-  };
+  } catch (err) {
+    alert('Не удалось подключиться к серверу');
+  }
+};
 
   if (!isOpen) return null;
 
@@ -74,15 +71,6 @@ const AuthModal = ({ isOpen, onClose, onLogin, onRegister }) => {
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder="Анна"
-              />
-            </div>
-            <div className="form-group">
-              <label>Email (опционально)</label>
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="anna@example.com"
               />
             </div>
             <div className="form-group">
