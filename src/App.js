@@ -33,48 +33,57 @@ import AllBuyAgoPage from './pages/AllBuyAgoPage';
 function App() {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchHistory, setSearchHistory] = useState([]);
-  const [filteredProducts, setFilteredProducts] = useState(null);
   const [favorites, setFavorites] = useState([]);
-
+  const [filteredProducts, setFilteredProducts] = useState(null);
 
   const [promotions, setPromotions] = useState([]);
-  const [newsProducts, setNewsProducts] = useState([]); 
+  const [newsProducts, setNewsProducts] = useState([]); // Новинки
   const [buyAgoProducts, setBuyAgoProducts] = useState([]);
   const [articles, setArticles] = useState([]);
 
- 
   useEffect(() => {
-    // Акции
-    fetch('http://localhost:5000/api/promotions')
-      .then(res => res.json())
-      .then(data => setPromotions(data))
-      .catch(err => console.error('Ошибка загрузки акций:', err));
+    const fetchData = async () => {
+      try {
+        const [promoRes, productRes, articleRes] = await Promise.all([
+          fetch('http://localhost:5000/api/promotions').then(r => r.json()),
+          fetch('http://localhost:5000/api/products').then(r => r.json()),
+          fetch('http://localhost:5000/api/articles').then(r => r.json()),
+        ]);
 
-    fetch('http://localhost:5000/api/products')
-      .then(res => res.json())
-      .then(data => setNewsProducts(data.slice(0, 8))) 
-      .catch(err => console.error('Ошибка загрузки новинок:', err));
+        setPromotions(promoRes);
+        setNewsProducts(productRes.slice(0, 8));
+        setBuyAgoProducts(productRes.slice(8, 16));
+        setArticles(articleRes);
 
-    fetch('http://localhost:5000/api/products')
-      .then(res => res.json())
-      .then(data => setBuyAgoProducts(data.slice(8, 16)))
-      .catch(err => console.error('Ошибка загрузки "покупали раньше":', err));
+      } catch (err) {
+        console.error('Ошибка загрузки данных:', err);
+      }
+    };
 
-    // Статьи (из таблицы news)
-    fetch('http://localhost:5000/api/news')
-      .then(res => res.json())
-      .then(data => setArticles(data))
-      .catch(err => console.error('Ошибка загрузки статей:', err));
+    fetchData();
   }, []);
 
-  // --- Функция поиска ---
-  const onSearch = (query) => {
-    if (!query.trim()) return;
-    setSearchQuery(query);
-    setSearchHistory(prev => [query, ...prev.filter(item => item !== query)].slice(0, 5));
+  const onSearch = async (query) => {
+    if (!query.trim()) {
+      setFilteredProducts(null);
+      return;
+    }
+
+    if (!searchHistory.includes(query)) {
+      setSearchHistory(prev => [query, ...prev.slice(0, 4)]);
+    }
+
+    try {
+      const response = await fetch(`http://localhost:5000/api/products/search?query=еда`);
+      const data = await response.json();
+      setFilteredProducts(data);
+    } catch (err) {
+      console.error('Ошибка поиска:', err);
+      setFilteredProducts([]);
+    }
   };
 
-  // --- Работа с избранным ---
+  //Работа с избранным
   const toggleFavorite = (product) => {
     setFavorites(prev =>
       prev.some(fav => fav.id === product.id)
@@ -100,7 +109,6 @@ function App() {
       {/* Акции */}
       <Promotions
         promotions={promotions}
-        onProductClick={() => {}}
         toggleFavorite={toggleFavorite}
         isFavorite={isFavorite}
       />
@@ -108,7 +116,6 @@ function App() {
       {/* Новинки */}
       <News
         products={newsProducts}
-        onProductClick={() => {}}
         toggleFavorite={toggleFavorite}
         isFavorite={isFavorite}
       />
@@ -116,7 +123,6 @@ function App() {
       {/* Покупали раньше */}
       <BuyAgo
         products={buyAgoProducts}
-        onProductClick={() => {}}
         toggleFavorite={toggleFavorite}
         isFavorite={isFavorite}
       />
@@ -126,7 +132,15 @@ function App() {
       <ArticlesSection articles={articles} />
 
       <Routes>
-        <Route path="/favorites" element={<FavoritesPage />} />
+        <Route 
+  path="/favorites" 
+  element={
+    <FavoritesPage 
+      favorites={favorites} 
+      toggleFavorite={toggleFavorite} 
+    /> 
+  } 
+/>
         <Route path="/catalog" element={<CatalogPage />} />
         <Route path="/category/:categoryKey" element={<CategoryPage />} />
         <Route path="/about" element={<AboutPage />} />
