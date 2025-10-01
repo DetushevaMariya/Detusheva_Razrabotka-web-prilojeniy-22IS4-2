@@ -1,177 +1,150 @@
-// src/components/OrdersPage.jsx
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import '../assets/OrdersPage.css';
 
 const OrdersPage = () => {
   const navigate = useNavigate();
+  const [orders, setOrders] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [selectedDate, setSelectedDate] = useState('today'); // today, 2025-04-01, etc.
 
-  // Пример данных заказов
-  const [orders, setOrders] = useState([
-    {
-      id: 355,
-      name: 'Антон',
-      phone: '+7 912 888 77 55',
-      status: 'Подтвержден',
-      time: '11:00',
-      date: 'Сегодня',
-      location: 'Усть-Ижма',
-      items: [
-        { title: 'Колбаса', quantity: 4 },
-        { title: 'Молоко', quantity: 2 },
-      ],
-    },
-    {
-      id: 222,
-      name: 'Дмитрий',
-      phone: '+7 912 888 77 55',
-      status: 'Подтвержден',
-      time: '11:00',
-      date: 'Сегодня',
-      location: 'Салехард',
-      items: [
-        { title: 'Сосиски', quantity: 3 },
-        { title: 'Хлеб', quantity: 1 },
-      ],
-    },
-    {
-      id: 134,
-      name: 'Дмитрий',
-      phone: '+7 912 888 77 55',
-      status: 'Возврат',
-      time: '11:00',
-      date: 'Сегодня',
-      location: 'Салехард',
-      items: [
-        { title: 'Колбаса', quantity: 2 },
-      ],
-    },
-    {
-      id: 855,
-      name: 'Антон',
-      phone: '+7 912 888 77 55',
-      status: 'Не подтвердили',
-      time: '14:00',
-      date: '1 апреля',
-      location: 'Усть-Ижма',
-      items: [
-        { title: 'Молоко', quantity: 1 },
-        { title: 'Хлеб', quantity: 2 },
-      ],
-    },
-    {
-      id: 543,
-      name: 'Дмитрий',
-      phone: '+7 912 888 77 55',
-      status: 'Доставляется',
-      time: '14:00',
-      date: '1 апреля',
-      location: 'Салехард',
-      items: [
-        { title: 'Сосиски', quantity: 2 },
-      ],
-    },
-    {
-      id: 756,
-      name: 'Дмитрий',
-      phone: '+7 912 888 77 55',
-      status: 'Подтвержден',
-      time: '14:00',
-      date: '1 апреля',
-      location: 'Усть-Ижма',
-      items: [
-        { title: 'Колбаса', quantity: 4 },
-      ],
-    },
-    {
-      id: 321,
-      name: 'Антон',
-      phone: '+7 912 888 77 55',
-      status: 'Собран',
-      time: '18:00',
-      date: '1 апреля',
-      location: 'Усть-Ижма',
-      items: [
-        { title: 'Снеки', quantity: 4 },
-        { title: 'Комбайн', quantity: 4 },
-      ],
-    },
-    {
-      id: 421,
-      name: 'Дмитрий',
-      phone: '+7 912 888 77 55',
-      status: 'Новый',
-      time: '18:00',
-      date: '1 апреля',
-      location: 'Усть-Ижма',
-      items: [
-        { title: 'Колбасы', quantity: 4 },
-        { title: 'Снеки', quantity: 4 },
-      ],
-    },
-    {
-      id: 661,
-      name: 'Дмитрий',
-      phone: '+7 912 888 77 55',
-      status: 'Новый',
-      time: '20:00',
-      date: '1 апреля',
-      location: 'Усть-Ижма',
-      items: [
-        { title: 'Колбасы', quantity: 4 },
-        { title: 'Снеки', quantity: 4 },
-      ],
-    },
-    {
-      id: 232,
-      name: 'Дмитрий',
-      phone: '+7 912 888 77 55',
-      status: 'Новый',
-      time: '20:00',
-      date: '1 апреля',
-      location: 'Усть-Ижма',
-      items: [
-        { title: 'Колбасы', quantity: 4 },
-        { title: 'Снеки', quantity: 4 },
-      ],
-    },
-    {
-      id: 512,
-      name: 'Дмитрий',
-      phone: '+7 912 888 77 55',
-      status: 'Новый',
-      time: '20:00',
-      date: '1 апреля',
-      location: 'Усть-Ижма',
-      items: [
-        { title: 'Колбасы', quantity: 4 },
-        { title: 'Снеки', quantity: 4 },
-      ],
-    },
-  ]);
+  //Получаем токен из localStorage
+  const token = localStorage.getItem('authToken');
 
-  // Состояние для выбранного времени
-  const [selectedTime, setSelectedTime] = useState('11:00');
-  const [showCalendar, setShowCalendar] = useState(false);
-
-  // Обработчики
-  const handleTimeSelect = (time) => {
-    setSelectedTime(time);
-    setShowCalendar(false);
+  //Маппинг для отображения дат
+  const dateLabels = {
+    'today': 'Сегодня',
+    '2025-04-01': '1 апреля',
+    '2025-04-05': '5 апреля'
   };
 
-  const handleStatusChange = (orderId, newStatus) => {
-    setOrders(prev =>
-      prev.map(order =>
-        order.id === orderId
-          ? { ...order, status: newStatus }
-          : order
-      )
+  const today = new Date().toISOString().split('T')[0];
+
+  const getDeliveryDate = (dateValue) => {
+  if (!dateValue) return null;
+
+  let dateObj;
+
+  if (typeof dateValue === 'string') {
+    dateObj = new Date(dateValue);
+  } else if (dateValue instanceof Date) {
+    dateObj = dateValue;
+  } else {
+    return null;
+  }
+
+  if (isNaN(dateObj.getTime())) return null;
+
+  return dateObj.toISOString().split('T')[0];
+};
+
+  //Загрузка заказов при монтировании или изменении даты
+  useEffect(() => {
+    if (!token) {
+      setError('Вы не авторизованы');
+      setLoading(false);
+      return;
+    }
+
+    const fetchOrders = async () => {
+      try {
+        let url = 'http://localhost:5000/api/orders';
+        const queryDate = selectedDate === 'today' ? today : selectedDate;
+
+        //Добавляем параметр даты в запрос
+        url += `?date=${queryDate}`;
+
+        const response = await fetch(url, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+
+        if (!response.ok) {
+          throw new Error('Не удалось загрузить заказы');
+        }
+
+        const data = await response.json();
+        setOrders(Array.isArray(data) ? data : []);
+      } catch (err) {
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    setLoading(true);
+    fetchOrders();
+  }, [token, selectedDate, today]);
+
+  //Обработчик изменения статуса
+  const handleStatusChange = async (orderId, newStatus) => {
+    try {
+      const response = await fetch(`http://localhost:5000/api/orders/${orderId}/status`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ status: newStatus })
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        setOrders(prev =>
+          prev.map(order =>
+            order.id === orderId ? { ...order, status: result.status } : order
+          )
+        );
+      } else {
+        alert('Не удалось обновить статус');
+      }
+    } catch (err) {
+      alert('Ошибка сети при обновлении статуса');
+    }
+  };
+
+  if (loading) {
+    return (
+      <div style={{ padding: '40px', textAlign: 'center' }}>
+        Загрузка заказов...
+      </div>
     );
-  };
+  }
+
+  if (error) {
+    return (
+      <div style={{ padding: '40px', textAlign: 'center', color: 'red' }}>
+        Ошибка: {error}
+      </div>
+    );
+  }
+
+const filteredOrders = orders.filter(order => {
+  const orderDate = getDeliveryDate(order.delivery_date);
+  const queryDate = selectedDate === 'today' ? today : selectedDate;
+
+  console.log('Order delivery_date:', order.delivery_date);
+  console.log('Parsed orderDate:', orderDate);
+  console.log('Query date:', queryDate);
+  console.log('Match:', orderDate === queryDate);
+
+  return orderDate && orderDate === queryDate;
+});
+
+console.log('Filtered orders count:', filteredOrders.length);
+console.log('Filtered orders:', filteredOrders);
+
+  //Получаем уникальные временные слоты, где есть заказы
+  const uniqueTimes = [...new Set(filteredOrders.map(o => o.delivery_time))]
+    .filter(time => time)
+    .sort();
 
   return (
     <div className="orders-container">
+      {/* Заголовок */}
       <div className="orders-header">
         <h1>Заказы</h1>
         <button
@@ -184,67 +157,91 @@ const OrdersPage = () => {
 
       {/* Фильтры дат */}
       <div className="date-filters">
-        <button className="date-btn active">Сегодня</button>
-        <button className="date-btn">1 апреля</button>
-        <button className="date-btn">5 апреля</button>
+        {Object.entries(dateLabels).map(([value, label]) => (
+          <button
+            key={value}
+            className={`date-btn ${selectedDate === value ? 'active' : ''}`}
+            onClick={() => setSelectedDate(value)}
+          >
+            {label}
+          </button>
+        ))}
       </div>
 
-      {/* Заказы по времени */}
-      {['11:00', '14:00', '18:00', '20:00'].map((time) => (
-        <div key={time} className="time-section">
-          <div className="time-header">
-            <span>{time}</span>
-            <span>✓ {Math.floor(Math.random() * 10)}/{Math.floor(Math.random() * 10)}</span>
-          </div>
-          <div className="location-tags">
-            {['Усть-Ижма', 'Cалехард'].map((loc) => (
-              <span key={loc} className="location-tag">{loc}</span>
-            ))}
-          </div>
-          <div className="orders-list">
-            {orders
-              .filter(order => order.time === time)
-              .map((order) => (
-                <div key={order.id} className="order-item">
-                  <div className="order-info">
-                    <div className="order-id">{order.id}</div>
-                    <div className="customer-info">
-                      <img src="https://via.placeholder.com/32" alt={order.name} />
-                      <span>{order.name}</span>
+      {/* Слоты с заказами */}
+      {uniqueTimes.length > 0 ? (
+        uniqueTimes.map((time) => {
+          const ordersInTime = filteredOrders.filter(o => o.delivery_time === time);
+          const locations = [...new Set(ordersInTime.map(o => o.location))];
+
+          return (
+            <div key={time} className="time-section">
+              <div className="time-header">
+                <span>{time}</span>
+                <span>✓ {ordersInTime.length}/{ordersInTime.length}</span>
+              </div>
+              <div className="location-tags">
+                {locations.map((loc) => (
+                  <span key={loc} className="location-tag">{loc}</span>
+                ))}
+              </div>
+              <div className="orders-list">
+                {ordersInTime.map((order) => (
+                  <div key={order.id} className="order-item">
+                    <div className="order-info">
+                      <div className="order-id">#{order.id}</div>
+                      <div className="customer-info">
+                        <img
+                          src="https://via.placeholder.com/32"
+                          alt="User"
+                          style={{ borderRadius: '50%' }}
+                        />
+                        <span>{order.user_name || 'Пользователь'}</span>
+                      </div>
+                      <div className="phone">+7 912 888 77 55</div>
                     </div>
-                    <div className="phone">{order.phone}</div>
+                    <div className="order-status">
+                      <select
+                        value={order.status}
+                        onChange={(e) => handleStatusChange(order.id, e.target.value)}
+                        style={{
+                          padding: '4px 8px',
+                          border: '1px solid #ddd',
+                          borderRadius: '4px',
+                          backgroundColor: '#f9f7f3',
+                          color: '#333',
+                          cursor: 'pointer',
+                        }}
+                      >
+                        <option value="Новый">Новый</option>
+                        <option value="Собран">Собран</option>
+                        <option value="Доставляется">Доставляется</option>
+                        <option value="Подтвержден">Подтвержден</option>
+                        <option value="Не подтвердили">Не подтвердили</option>
+                        <option value="Возврат">Возврат</option>
+                        <option value="Вернули">Вернули</option>
+                      </select>
+                    </div>
+                    <div className="order-actions">
+                      <button
+                        className="view-order-btn"
+                        onClick={() => navigate(`/order/${order.id}`)}
+                      >
+                        Просмотреть заказ
+                      </button>
+                      <button className="chat-btn">💬</button>
+                    </div>
                   </div>
-                  <div className="order-status">
-                    <select
-                      value={order.status}
-                      onChange={(e) => handleStatusChange(order.id, e.target.value)}
-                      style={{
-                        padding: '4px 8px',
-                        border: '1px solid #ddd',
-                        borderRadius: '4px',
-                        backgroundColor: '#f9f7f3',
-                        color: '#333',
-                        cursor: 'pointer',
-                      }}
-                    >
-                      <option value="Новый">Новый</option>
-                      <option value="Собран">Собран</option>
-                      <option value="Доставляется">Доставляется</option>
-                      <option value="Подтвержден">Подтвержден</option>
-                      <option value="Не подтвердили">Не подтвердили</option>
-                      <option value="Возврат">Возврат</option>
-                      <option value="Вернули">Вернули</option>
-                    </select>
-                  </div>
-                  <div className="order-actions">
-                    <button className="view-order-btn">Просмотреть заказ</button>
-                    <button className="chat-btn">💬</button>
-                  </div>
-                </div>
-              ))}
-          </div>
+                ))}
+              </div>
+            </div>
+          );
+        })
+      ) : (
+        <div style={{ padding: '20px', textAlign: 'center', color: '#666' }}>
+          Нет заказов на выбранный день.
         </div>
-      ))}
+      )}
     </div>
   );
 };
