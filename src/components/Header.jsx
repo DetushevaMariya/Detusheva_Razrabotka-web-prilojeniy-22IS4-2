@@ -7,65 +7,67 @@ import userPhoto from '../assets/photo/man.jpg';
 import { MenuIcon, HeartIcon, BoxIcon, CartIcon } from './Icons';
 import AuthModal from './AuthModal';
 
-const Header = ({
-  searchQuery,
-  setSearchQuery,
-  searchHistory,
-  onSearch
-}) => {
+const Header = ({ searchQuery, setSearchQuery, searchHistory, onSearch }) => {
   const [isAuthOpen, setIsAuthOpen] = useState(false);
   const [user, setUser] = useState(null);
-  const [cartCount, setCartCount] = useState(0); 
+  const [cartCount, setCartCount] = useState(0);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
   useEffect(() => {
     const token = localStorage.getItem('authToken');
+
     if (token) {
       fetch('http://localhost:5000/api/users/me', {
-        headers: { Authorization: `Bearer ${token}` },
+        headers: { 'Authorization': `Bearer ${token}` },
       })
-        .then((res) => res.json())
-        .then((userData) => {
+        .then(res => res.json())
+        .then(userData => {
           if (userData.id) {
             setUser(userData);
+            localStorage.setItem('currentUser', JSON.stringify(userData)); 
           } else {
-            localStorage.removeItem('authToken');
-            localStorage.removeItem('currentUser');
+            clearAuth(); 
           }
         })
-        .catch(console.error);
+        .catch(clearAuth);н
     }
-  }, []);
 
-
-  useEffect(() => {
-    const savedUser = localStorage.getItem('currentUser');
-    if (savedUser) {
-      setUser(JSON.parse(savedUser));
-    }
     const savedCart = localStorage.getItem('cart');
     if (savedCart) {
       const cart = JSON.parse(savedCart);
       const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
       setCartCount(totalItems);
     }
-  }, []);
 
-  //Функция для обновления счётчика
-  const updateCartCount = () => {
-    const savedCart = localStorage.getItem('cart');
-    const cart = savedCart ? JSON.parse(savedCart) : [];
-    const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
-    setCartCount(totalItems);
+    
+    window.updateCartCount = () => {
+      const cart = JSON.parse(localStorage.getItem('cart') || '[]');
+      const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
+      setCartCount(totalItems);
+    };
+
+  }, []); 
+
+  const clearAuth = () => {
+    localStorage.removeItem('authToken');
+    localStorage.removeItem('currentUser');
+    setUser(null);
   };
 
-  window.updateCartCount = updateCartCount;
+  const handleLogout = () => {
+    clearAuth();
+    setIsDropdownOpen(false);
+  };
 
-  const handleSearchClick = () => {
-    if (searchQuery.trim()) {
-      onSearch(searchQuery);
-    }
+  const handleLoginSuccess = (userData) => {
+    setUser(userData);
+    setIsAuthOpen(false);
+  };
+
+  const handleRegisterSuccess = (userData) => {
+    setUser(userData);
+    setIsAuthOpen(false);
   };
 
   const handleSuggestionClick = (suggestion) => {
@@ -74,60 +76,25 @@ const Header = ({
     setShowSuggestions(false);
   };
 
-  const handleLogin = (userData) => {
-    setUser(userData);
-    localStorage.setItem('currentUser', JSON.stringify(userData));
-    setIsAuthOpen(false);
-  };
-
-  const handleRegister = (userData) => {
-    setUser(userData);
-    localStorage.setItem('currentUser', JSON.stringify(userData));
-    setIsAuthOpen(false);
-  };
-
-  const handleLogout = () => {
-    localStorage.removeItem('authToken');
-    localStorage.removeItem('currentUser');
-    setUser(null);
-    setIsDropdownOpen(false);
-  };
-
-  const handleLoginSuccess = (userData) => {
-    setUser(userData);
-  };
-
   return (
     <div style={{ width: '1440px', margin: '0 auto', padding: '0' }}>
       <header className="header">
+        {/* Логотип */}
         <div className="logo-container">
           <Logo />
           <span>СЕВЕРЯНОЧКА</span>
         </div>
 
+        {/* Каталог */}
         <button
           className="catalog-button"
-          onClick={() => window.location.href = '/catalog'}
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px',
-            padding: '8px 12px',
-            background: '#e8f5e8',
-            border: '1px solid #ddd',
-            borderRadius: '4px',
-            cursor: 'pointer',
-            fontSize: '14px',
-            fontWeight: 'bold',
-            color: '#333',
-            textDecoration: 'none',
-            transition: 'all 0.3s',
-          }}
+          onClick={() => (window.location.href = '/catalog')}
         >
           <MenuIcon />
           <span>Каталог</span>
         </button>
 
+        {/* Поиск */}
         <div className="search-bar">
           <input
             type="text"
@@ -137,30 +104,24 @@ const Header = ({
             onFocus={() => setShowSuggestions(true)}
             onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
           />
-          <button 
-            onClick={handleSearchClick} 
-            style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '1.2rem' }}
-          >
-            🔍
-          </button>
+          <button onClick={() => onSearch(searchQuery)}>🔍</button>
 
           {showSuggestions && searchHistory.length > 0 && (
             <div className="search-suggestions">
-              {searchHistory
-                .filter(item => item.toLowerCase().includes(searchQuery.toLowerCase()))
-                .map((item, index) => (
-                  <div
-                    key={index}
-                    className="suggestion-item"
-                    onClick={() => handleSuggestionClick(item)}
-                  >
-                    {item}
-                  </div>
-                ))}
+              {searchHistory.map((item, index) => (
+                <div
+                  key={index}
+                  className="suggestion-item"
+                  onClick={() => handleSuggestionClick(item)}
+                >
+                  {item}
+                </div>
+              ))}
             </div>
           )}
         </div>
 
+        {/*Навигация*/}
         <nav className="nav-links">
           <Link to="/favorites" className="nav-link">
             <HeartIcon />
@@ -177,6 +138,7 @@ const Header = ({
           </Link>
         </nav>
 
+        {/*Пользователь*/}
         <div className="user-menu">
           {user ? (
             <div className="user-profile">
@@ -193,34 +155,27 @@ const Header = ({
 
               {isDropdownOpen && (
                 <div className="dropdown-menu">
-                  <button
-                    className="dropdown-item"
-                    onClick={handleLogout}
-                  >
+                  <button className="dropdown-item" onClick={handleLogout}>
                     Выйти
                   </button>
                 </div>
               )}
             </div>
           ) : (
-            <button 
-              className="login-btn"
-              onClick={() => setIsAuthOpen(true)}
-            >
+            <button className="login-btn" onClick={() => setIsAuthOpen(true)}>
               Войти
             </button>
           )}
         </div>
       </header>
 
-      {isAuthOpen && (
-        <AuthModal
-          isOpen={isAuthOpen}
-          onClose={() => setIsAuthOpen(false)} 
-          onLogin={handleLogin}       
-          onRegister={handleRegister} 
-        />
-      )}
+      {/*Модальное окно */}
+      <AuthModal
+        isOpen={isAuthOpen}
+        onClose={() => setIsAuthOpen(false)}
+        onLogin={handleLoginSuccess}
+        onRegister={handleRegisterSuccess}
+      />
     </div>
   );
 };
