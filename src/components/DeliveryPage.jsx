@@ -1,21 +1,51 @@
-// src/components/DeliveryPage.jsx
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import '../assets/DeliveryPage.css';
 
 const DeliveryPage = () => {
   const navigate = useNavigate();
 
-  // Получаем корзину из localStorage
-  const savedCart = localStorage.getItem('cart');
-  const cart = savedCart ? JSON.parse(savedCart) : [];
-  const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
-  const totalPrice = cart.reduce((sum, item) => {
+  const [cartItems, setCartItems] = useState([]);
+
+  //Читаем корзину при монтировании
+  useEffect(() => {
+    const savedCart = localStorage.getItem('cart');
+    if (savedCart) {
+      try {
+        setCartItems(JSON.parse(savedCart));
+      } catch (e) {
+        console.error('Ошибка чтения корзины', e);
+      }
+    }
+  }, []);
+
+  //Обновляем при изменении localStorage
+  useEffect(() => {
+    const handleStorageChange = () => {
+      const savedCart = localStorage.getItem('cart');
+      if (savedCart) {
+        try {
+          setCartItems(JSON.parse(savedCart));
+        } catch (e) {
+          console.error('Ошибка чтения корзины', e);
+        }
+      }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+    };
+  }, []);
+
+    const totalItems = cartItems.reduce((sum, item) => sum + item.quantity, 0);
+  const totalPrice = cartItems.reduce((sum, item) => {
     const price = item.discount ? item.price * 0.9 : item.price;
     return sum + price * item.quantity;
   }, 0);
 
-  // Состояния формы
+  //Состояния формы
   const [deliveryData, setDeliveryData] = useState({
     settlement: '',
     street: '',
@@ -30,7 +60,7 @@ const DeliveryPage = () => {
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   const [selectedTime, setSelectedTime] = useState('');
 
-  // Обработчики изменений
+  //Обработчики изменений
   const handleChange = (e) => {
     const { name, value } = e.target;
     setDeliveryData(prev => ({ ...prev, [name]: value }));
@@ -55,10 +85,58 @@ const DeliveryPage = () => {
     alert('Заказ оформлен!');
     navigate('/');
   };
+  
+  //Функция отправки заказа
+  const handleSubmitOrder = async (paymentMethod) => {
+    const orderData = {
+      items: cartItems.map(item => ({
+        id: item.id,
+        title: item.title,
+        price: item.price,
+        quantity: item.quantity,
+        discount: item.discount
+      })),
+      totalPrice,
+      date: deliveryData.date,
+      timeSlot: selectedTime,
+      settlement: deliveryData.settlement,
+      street: deliveryData.street,
+      house: deliveryData.house,
+      apartment: deliveryData.apartment,
+      additional: deliveryData.additional,
+      phone: deliveryData.phone
+    };
+
+    try {
+      const token = localStorage.getItem('authToken');
+      const response = await fetch('http://localhost:5000/api/orders', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': token ? `Bearer ${token}` : ''
+        },
+        body: JSON.stringify(orderData)
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        //Очищаем корзину
+        localStorage.removeItem('cart');
+        window.dispatchEvent(new Event('storage'));
+
+        alert(`Заказ №${data.orderId} оформлен!`);
+        navigate('/');
+      } else {
+        alert('Ошибка: ' + (data.error || 'Не удалось оформить заказ'));
+      }
+    } catch (err) {
+      alert('Ошибка подключения к серверу');
+    }
+  };
 
   return (
     <div className="delivery-container">
-      {/* Заголовок и кнопка "На главную" */}
       <div className="delivery-header">
         <h2>Доставка</h2>
         <button
@@ -228,34 +306,36 @@ const DeliveryPage = () => {
         <div className="section-btn">
           <div className="payment-options">
             <button
-              className="payment-btn"
-              style={{
-                padding: '12px',
-                backgroundColor: '#ff6b35',
-                color: 'white',
-                border: 'none',
-                borderRadius: '4px',
-                cursor: 'pointer',
-                width: '200px',
-                marginRight: '16px',
-              }}
-            >
+                className="payment-btn"
+                style={{
+                  padding: '12px',
+                  backgroundColor: '#ff6b35',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '4px',
+                  cursor: 'pointer',
+                  width: '200px',
+                  marginRight: '16px',
+                }}
+                onClick={() => handleSubmitOrder('online')}
+              >
               Оплатить на сайте
             </button>
             <button
-              className="payment-btn"
-              style={{
-                padding: '12px',
-                backgroundColor: '#4caf50',
-                color: 'white',
-                border: 'none',
-                borderRadius: '4px',
-                cursor: 'pointer',
-                width: '200px',
-              }}
-            >
-              Оплатить при получении
-            </button>
+                className="payment-btn"
+                style={{
+                  padding: '12px',
+                  backgroundColor: '#4caf50',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '4px',
+                  cursor: 'pointer',
+                  width: '200px',
+                }}
+                onClick={() => handleSubmitOrder('cash')}
+              >
+                Оплатить при получении
+              </button>
           </div>
         </div>
       </div>
