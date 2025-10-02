@@ -1,3 +1,4 @@
+// src/App.js
 import React, { useState, useEffect } from 'react';
 import {
   BrowserRouter as Router,
@@ -6,13 +7,7 @@ import {
 } from 'react-router-dom';
 
 import Header from './components/Header';
-import Hero from './components/Hero';
-import Promotions from './components/Promotions';
-import News from './components/News';
-import BuyAgo from './components/BuyAgo';
-import SpecialOffersSection from './components/SpecialOffersSection';
-import OurStores from './components/OurStores';
-import ArticlesSection from './components/ArticlesSection';
+import HomePage from './components/HomePage'; // ← новый компонент
 import FavoritesPage from './components/FavoritesPage';
 import CatalogPage from './components/CatalogPage';
 import CategoryPage from './components/CategoryPage';
@@ -34,13 +29,14 @@ function App() {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchHistory, setSearchHistory] = useState([]);
   const [favorites, setFavorites] = useState([]);
-  const [filteredProducts, setFilteredProducts] = useState(null);
 
+  // --- ДАННЫЕ С API ---
   const [promotions, setPromotions] = useState([]);
   const [newsProducts, setNewsProducts] = useState([]); // Новинки
   const [buyAgoProducts, setBuyAgoProducts] = useState([]);
   const [articles, setArticles] = useState([]);
 
+  // --- ЗАГРУЗКА ДАННЫХ ---
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -64,26 +60,22 @@ function App() {
   }, []);
 
   const onSearch = async (query) => {
-    if (!query.trim()) {
-      setFilteredProducts(null);
-      return;
-    }
+    if (!query.trim()) return;
 
     if (!searchHistory.includes(query)) {
       setSearchHistory(prev => [query, ...prev.slice(0, 4)]);
     }
 
     try {
-      const response = await fetch(`http://localhost:5000/api/products/search?query=еда`);
+      const response = await fetch(`http://localhost:5000/api/products/search?query=${encodeURIComponent(query)}`);
       const data = await response.json();
-      setFilteredProducts(data);
+      // Здесь можно использовать setFilteredProducts, если нужно фильтровать
     } catch (err) {
       console.error('Ошибка поиска:', err);
-      setFilteredProducts([]);
     }
   };
 
-  //Работа с избранным
+  // --- Работа с избранным ---
   const toggleFavorite = (product) => {
     setFavorites(prev =>
       prev.some(fav => fav.id === product.id)
@@ -104,43 +96,25 @@ function App() {
         searchHistory={searchHistory}
         onSearch={onSearch}
       />
-      <Hero />
 
-      {/* Акции */}
-      <Promotions
-        promotions={promotions}
-        toggleFavorite={toggleFavorite}
-        isFavorite={isFavorite}
-      />
-
-      {/* Новинки */}
-      <News
-        products={newsProducts}
-        toggleFavorite={toggleFavorite}
-        isFavorite={isFavorite}
-      />
-
-      {/* Покупали раньше */}
-      <BuyAgo
-        products={buyAgoProducts}
-        toggleFavorite={toggleFavorite}
-        isFavorite={isFavorite}
-      />
-
-      <SpecialOffersSection />
-      <OurStores />
-      <ArticlesSection articles={articles} />
-
+      {/* Все маршруты теперь полностью заменяют контент */}
       <Routes>
-        <Route 
-  path="/favorites" 
-  element={
-    <FavoritesPage 
-      favorites={favorites} 
-      toggleFavorite={toggleFavorite} 
-    /> 
-  } 
-/>
+        {/* Главная страница — только она содержит Hero и секции */}
+        <Route path="/" element={
+          <HomePage
+            promotions={promotions}
+            newsProducts={newsProducts}
+            buyAgoProducts={buyAgoProducts}
+            articles={articles}
+            toggleFavorite={toggleFavorite}
+            isFavorite={isFavorite}
+          />
+        } />
+
+        {/* Отдельные страницы */}
+        <Route path="/favorites" element={
+          <FavoritesPage favorites={favorites} toggleFavorite={toggleFavorite} />
+        } />
         <Route path="/catalog" element={<CatalogPage />} />
         <Route path="/category/:categoryKey" element={<CategoryPage />} />
         <Route path="/about" element={<AboutPage />} />
