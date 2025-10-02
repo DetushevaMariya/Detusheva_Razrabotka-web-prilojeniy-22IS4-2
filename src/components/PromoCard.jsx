@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import '../assets/PromoCard.css';
 
 const PromoCard = ({ 
@@ -8,61 +8,85 @@ const PromoCard = ({
   originalPrice, 
   title, 
   rating, 
-  onAddToCart,
   onToggleFavorite,
-  isFavorite = false 
+  isFavorite = false
 }) => {
-  const [isAdded, setIsAdded] = useState(false);
-  const [quantity, setQuantity] = useState(1);
+  const [quantity, setQuantity] = useState(0);
 
-  const handleAddToCart = () => {
-    setIsAdded(true);
-    onAddToCart?.();
+  useEffect(() => {
+    const savedCart = localStorage.getItem('cart');
+    if (savedCart) {
+      const cart = JSON.parse(savedCart);
+      const item = cart.find(p => p.title === title);
+      if (item) {
+        setQuantity(item.quantity);
+      }
+    }
+  }, [title]);
+
+  const handleIncrement = () => {
+    const newQuantity = quantity + 1;
+    updateCart(newQuantity);
+    setQuantity(newQuantity);
   };
 
-  const handleIncrement = () => setQuantity(prev => prev + 1);
-  const handleDecrement = () => setQuantity(prev => prev > 1 ? prev - 1 : 1);
-
-  //огика добавления в корзину
-  const addToCart = () => {
-  const product = {
-    id: Date.now() + Math.random(),
-    image,
-    title,
-    price: parseFloat(price.replace(',', '.')),
-    discount: null,
-    quantity,
+  const handleDecrement = () => {
+    if (quantity <= 1) {
+      removeFromCart();
+      setQuantity(0);
+    } else {
+      const newQuantity = quantity - 1;
+      updateCart(newQuantity);
+      setQuantity(newQuantity);
+    }
   };
 
-  const savedCart = localStorage.getItem('cart');
-  let cart = savedCart ? JSON.parse(savedCart) : [];
+  const updateCart = (qty) => {
+    const product = {
+      id: Date.now() + Math.random(),
+      image,
+      title,
+      price: parseFloat(price.replace(',', '.')),
+      discount,
+      quantity: qty,
+    };
 
-  const existingIndex = cart.findIndex(p => p.title === product.title);
-  if (existingIndex !== -1) {
-    cart[existingIndex].quantity += product.quantity;
-  } else {
-    cart.push(product);
-  }
+    const savedCart = localStorage.getItem('cart');
+    let cart = savedCart ? JSON.parse(savedCart) : [];
 
-  localStorage.setItem('cart', JSON.stringify(cart));
-  setIsAdded(true);
+    const existingIndex = cart.findIndex(p => p.title === title);
+    if (existingIndex !== -1) {
+      if (qty > 0) {
+        cart[existingIndex].quantity = qty;
+      } else {
+        cart.splice(existingIndex, 1);
+      }
+    } else if (qty > 0) {
+      cart.push(product);
+    }
 
-  if (window.updateCartCount) {
-    window.updateCartCount();
-  }
-};
+    localStorage.setItem('cart', JSON.stringify(cart));
+    window.updateCartCount?.();
+  };
+
+  const removeFromCart = () => {
+    const savedCart = localStorage.getItem('cart');
+    if (!savedCart) return;
+
+    const cart = JSON.parse(savedCart);
+    const updatedCart = cart.filter(p => p.title !== title);
+    localStorage.setItem('cart', JSON.stringify(updatedCart));
+    window.updateCartCount?.();
+  };
 
   return (
     <div className="promo-card">
       <div className="card-image-container">
         <img src={image} alt={title} />
         <div className="discount-badge">{discount}</div>
-        
         <button 
           className="favorite-btn"
-          onClick={() => {
-            onToggleFavorite();
-          }}
+          onClick={() => onToggleFavorite()}
           aria-label="Добавить в избранное"
         >
           <svg width="24" height="24" viewBox="0 0 24 24" fill={isFavorite ? '#ff6b35' : 'none'} stroke="currentColor" strokeWidth="2">
@@ -70,41 +94,36 @@ const PromoCard = ({
           </svg>
         </button>
       </div>
-
       <div className="card-info">
         <div className="prices">
           <span className="price-current">{price} ₽</span>
           <span className="price-original">{originalPrice} ₽</span>
         </div>
-
         <div className="product-title">{title}</div>
-
         <div className="rating">
           {Array.from({ length: 5 }).map((_, i) => (
             <span key={i} className={i < rating ? 'star filled' : 'star'}>★</span>
           ))}
         </div>
-
         <div className="add-to-cart-container">
-          {isAdded ? (
+          {quantity === 0 ? (
+            <button 
+              className="add-to-cart"
+              onClick={handleIncrement}
+            >
+              В корзину
+            </button>
+          ) : (
             <div className="counter">
               <button onClick={handleDecrement}>−</button>
               <span>{quantity}</span>
               <button onClick={handleIncrement}>+</button>
             </div>
-          ) : (
-            <button 
-              className="add-to-cart"
-              onClick={handleAddToCart}
-            >
-              В корзину
-            </button>
           )}
         </div>
       </div>
     </div>
   );
 };
-
 
 export default PromoCard;
